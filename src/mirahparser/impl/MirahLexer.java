@@ -465,6 +465,7 @@ public class MirahLexer {
 
     private Tokens readBlockComment(MirahLexer l, Input i) {
       boolean javadoc = i.peek() == '*';
+      int pos = i.pos();
       for (int c = i.read(); c != EOF; c = i.read()) {
         switch(c) {
         case '\n':
@@ -472,7 +473,7 @@ public class MirahLexer {
           break;
         case '*':
           if (i.consume('/')) {
-            return javadoc ? Tokens.tJavaDoc : Tokens.tComment;
+            return javadoc && (i.pos() - pos > 2) ? Tokens.tJavaDoc : Tokens.tComment;
           }
           break;
         case '/':
