@@ -726,6 +726,7 @@ public class MirahLexer {
             type = Tokens.tOpAssign;
         } else if (l.isARG() && l.spaceSeen && !Character.isWhitespace(i.peek())) {
           // warn("Ambiguous first argument; make sure.")
+          l.pushState(new RegexLexer());
           type = Tokens.tRegexBegin;
         } else {
           type = Tokens.tSlash;
