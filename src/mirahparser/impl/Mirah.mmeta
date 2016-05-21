@@ -1211,7 +1211,7 @@ parser MirahParser {
       result = StringConcat(a)
       result.position += Node(b).position
     else
-      result = StringConcat.new(a.position + b.position)
+      result = StringConcat.new(a.position + b.position, [])
       result.strings.add(StringPiece(a))
     end
     if b.kind_of?(StringConcat)
