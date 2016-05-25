@@ -232,7 +232,49 @@ public class MirahLexer {
     }
   }
 
+  private static class SStringLexer2 extends BaseLexer {
+    int endChar = -1;
+      
+    public SStringLexer2(int endChar) {
+      this.endChar = endChar;
+    }
+
+    @Override
+    public Tokens lex(MirahLexer l, Input i) {
+      int c0 = i.read();
+      if (c0 == endChar) {
+          l.popState();
+          return Tokens.tSQuote;
+      }
+      if (c0 == '\n') l.noteNewline();
+      readRestOfString(l, i);
+      return Tokens.tStringContent;
+    }
+
+    private void readRestOfString(MirahLexer l, Input i) {
+      int c = 0;
+      for (c = i.read(); c != EOF;c = i.read()) {
+        if (c == '\n') l.noteNewline();
+        if (c == endChar) {
+          i.backup(1);
+          break;
+        }
+      }
+      if ( c == EOF ){
+        i.backup(1);
+      }
+    }
+  }
+
   private static class DStringLexer extends BaseLexer {
+    int endChar = '"';
+
+    public DStringLexer(int endChar) {
+      this.endChar = endChar;
+    }
+
+    public DStringLexer() {}
+    
     @Override
     public Tokens lex(MirahLexer l, Input i) {
       int c = i.read();
@@ -267,7 +309,7 @@ public class MirahLexer {
       return Tokens.tDQuote;
     }
     public boolean isEndOfString(int c) {
-      return c == '"';
+      return c == endChar;
     }
     private void readEscape(Input i) {
       int c = i.read();
@@ -415,6 +457,22 @@ public class MirahLexer {
         return Tokens.tUNKNOWN;
       }
     }
+  }
+
+  private static int quoteString(Input i, char qchar) {
+    if (i.consume(qchar)) {
+      int ch = i.peek();
+      if ((ch >= 33 && ch <= 47)||(ch >= 58 && ch <= 64)
+          ||(ch >= 91 && ch <= 96)||(ch >= 123 && ch <= 126)) {
+          i.consume((char)ch);
+          if (ch == 40) ch = 41;
+          else if (ch == 91) ch = 93;
+          else if (ch == 123) ch = 125;
+          return ch;
+      }
+      i.backup(1);
+    }
+    return -1;
   }
 
   private static class StandardLexer implements Lexer {
@@ -900,8 +958,17 @@ public class MirahLexer {
         }
         break;
       case '%':
+        int endChar = -1;
         if (i.consume('=')) {
           type = Tokens.tOpAssign;
+        } else if ((l.isBEG() || (l.isARG() && l.spaceSeen))
+                   && ((endChar = quoteString(i, 'Q')) > 0)) {
+          l.pushState(new DStringLexer(endChar));
+          type = Tokens.tDQuote;
+        } else if ((l.isBEG() || (l.isARG() && l.spaceSeen))
+                   && ((endChar = quoteString(i, 'q')) > 0)) {
+          l.pushState(new SStringLexer2(endChar));
+          type = Tokens.tSQuote;
         } else {
           type = Tokens.tPercent;
         }
