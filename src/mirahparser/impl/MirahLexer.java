@@ -234,17 +234,27 @@ public class MirahLexer {
 
   private static class SStringLexer2 extends BaseLexer {
     int endChar = -1;
-      
+    int fstChar = -1;
+    int fstTime = 0;
+    
     public SStringLexer2(int endChar) {
-      this.endChar = endChar;
+      this.fstChar = endChar / 256;
+      this.endChar = endChar % 256;
+      if (this.fstChar == this.endChar)
+        this.fstChar = 0;
     }
 
     @Override
     public Tokens lex(MirahLexer l, Input i) {
       int c0 = i.read();
+      if (c0 == fstChar) fstTime++;
       if (c0 == endChar) {
+        if (fstTime > 0)
+          fstTime--;
+        else {
           l.popState();
           return Tokens.tSQuote;
+        }
       }
       if (c0 == '\n') l.noteNewline();
       readRestOfString(l, i);
@@ -255,9 +265,14 @@ public class MirahLexer {
       int c = 0;
       for (c = i.read(); c != EOF;c = i.read()) {
         if (c == '\n') l.noteNewline();
+        if (c == fstChar) fstTime++;
         if (c == endChar) {
-          i.backup(1);
-          break;
+          if (fstTime > 0)
+            fstTime--;
+          else {
+            i.backup(1);
+            break;
+          }
         }
       }
       if ( c == EOF ){
@@ -268,9 +283,13 @@ public class MirahLexer {
 
   private static class DStringLexer extends BaseLexer {
     int endChar = '"';
+    int fstChar = 0;
 
     public DStringLexer(int endChar) {
-      this.endChar = endChar;
+      this.fstChar = endChar / 256;
+      this.endChar = endChar % 256;
+      if (this.fstChar == this.endChar)
+        this.fstChar = 0;
     }
 
     public DStringLexer() {}
@@ -308,8 +327,17 @@ public class MirahLexer {
     public Tokens readEndOfString(Input i) {
       return Tokens.tDQuote;
     }
+    int fstTime = 0;
     public boolean isEndOfString(int c) {
-      return c == endChar;
+      if (c == fstChar) fstTime++;
+      if (c == endChar) {
+        if (fstTime > 0) {
+          fstTime--;
+          return false;
+        }
+        return true;
+      } 
+      return false;
     }
     private void readEscape(Input i) {
       int c = i.read();
@@ -465,9 +493,9 @@ public class MirahLexer {
       if ((ch >= 33 && ch <= 47)||(ch >= 58 && ch <= 64)
           ||(ch >= 91 && ch <= 96)||(ch >= 123 && ch <= 126)) {
           i.consume((char)ch);
-          if (ch == 40) ch = 41;
-          else if (ch == 91) ch = 93;
-          else if (ch == 123) ch = 125;
+          if (ch == 40) ch = 40*256|41;
+          else if (ch == 91) ch = 91*256|93;
+          else if (ch == 123) ch = 123*256|125;
           return ch;
       }
       i.backup(1);
