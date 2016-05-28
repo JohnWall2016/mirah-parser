@@ -22,6 +22,13 @@ class Array < NodeImpl
   end
 end
 
+class TypeArray < NodeImpl
+  init_node do
+    child type: Node
+    child_list values: Node
+  end
+end
+
 class Fixnum < NodeImpl  # Should we rename this?
   init_literal 'long'
 end
