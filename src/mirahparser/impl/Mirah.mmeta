@@ -187,10 +187,9 @@ parser MirahParser {
                                                   |op=operation3 ~($EQ..$OpAssign) iter=brace_block? h=-> ^(Call h op [] iter)
                                                   )
                              | ($LBrack)=> t=$LBrack opt_nl
-														 	 						 ($RBrack opt_nl $LBrace opt_nl a=args trailer opt_nl $RBrace ~($EQ..$OpAssign) h=-> ^(TypeArray h a)
-														 	 						  |a=call_args? opt_nl $RBrack iter=brace_block? ~($EQ..$OpAssign)	h=-> ^(Call h makeIdentifier(makePosition(t), "[]") a iter)
-																						)
-														 
+                                             ($RBrack opt_nl $LBrace opt_nl a=args trailer opt_nl $RBrace ~($EQ..$OpAssign) h=-> ^(TypeArray h a)
+                                              |a=call_args? opt_nl $RBrack iter=brace_block? ~($EQ..$OpAssign)	h=-> ^(Call h makeIdentifier(makePosition(t), "[]") a iter)
+                                             )
                              )* {h};
 
 # primary2 is the main entrance into most expression types
