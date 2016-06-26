@@ -89,6 +89,7 @@ interface TypeRef < TypeName do
   def name:String; end
   def isArray:boolean; end
   def isStatic:boolean; end
+  def arguments:List; end # Type Arguments
   macro def array?
     quote { isArray }
   end
@@ -284,13 +285,15 @@ end
 
 class TypeRefImpl < NodeImpl implements TypeRef, TypeName
   init_node
-  attr_accessor name: String, isArray: 'boolean', isStatic: 'boolean'
+  attr_accessor name: String, isArray: 'boolean', isStatic: 'boolean', arguments: List
 
-  def initialize(name:String, isArray=false, isStatic=false, position:Position=nil)
+  def initialize(name:String, isArray=false, isStatic=false,
+                 position:Position=nil, arguments:List=nil)
     super(position)
     @name = name
     @isArray = isArray
     @isStatic = isStatic
+    @arguments = arguments
   end
 
   def typeref:TypeRef

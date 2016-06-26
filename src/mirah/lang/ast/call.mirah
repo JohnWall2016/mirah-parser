@@ -1,5 +1,6 @@
 package mirahparser.lang.ast
 
+import java.util.ArrayList
 
 # Interface for all call sites.
 interface CallSite < Node, Named, TypeName do
@@ -103,6 +104,20 @@ class Call < NodeImpl
       name = "#{target_typeref.name}.#{self.name.identifier}"
       return TypeRefImpl.new(name, false, false, position)
     end
+  end
+end
+
+class TypeInvoke < NodeImpl
+  implements TypeName
+  init_node do
+    child type: TypeRef
+    child_list parameters: Node
+  end
+
+  def typeref: TypeRef
+    params = ArrayList.new
+    0.upto(parameters.size - 1) {|i| params.add(Node(parameters.get(i)))}
+    TypeRefImpl.new(type.name, false, false, type.position, params)
   end
 end
 

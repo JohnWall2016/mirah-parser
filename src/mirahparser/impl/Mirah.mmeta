@@ -749,10 +749,13 @@ parser MirahParser {
        ;
 
   $Returns[TypeName]
-  type: n=(cpath)
-        ( $LBrack $RBrack {TypeRefImpl.new(TypeName(n).typeref.name, true, false, n.position)}
+  type: n=(cpath) l=(type_arguments)?
+        ( $LBrack $RBrack {TypeRefImpl.new(TypeName(n).typeref.name, true, false, n.position, l)}
+        | ?{l} {TypeRefImpl.new(TypeName(n).typeref.name, false, false, n.position, l)}
         | {TypeName(n)}
         );
+
+  type_arguments: $LBrack opt_nl l=rlistOf(:type) opt_nl $RBrack {l};
 
   superclass: $LT cpath # Should this be expr_value instead of cpath?
             | # empty

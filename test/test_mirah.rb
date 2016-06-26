@@ -41,6 +41,14 @@ class TestParsing < Test::Unit::TestCase
     def enterTypeRefImpl(node, arg)
       enterDefault(node, arg)
       @out << ", #{node.name}"
+      if node.arguments
+        @out << '['
+        @first = true
+        node.arguments.each do |n|
+          n.accept(self, arg)
+        end
+        @out << ']'
+      end
       @out << ", array" if node.isArray
       @out << ", static" if node.isStatic
       true
@@ -523,6 +531,16 @@ EOF
     assert_fails("def foo(*a, *b);end")
     assert_fails("def foo(&a, &b);end")
     assert_fails("def foo(&a=1);end")
+    assert_parse("[Script, [[MethodDefinition, [SimpleString, foo], [Arguments, [RequiredArgumentList, [RequiredArgument, [SimpleString, a], [TypeRefImpl, ArrayList[[Constant, [SimpleString, String]]]]]], [OptionalArgumentList], null, [RequiredArgumentList], null], null, [], [AnnotationList]]]]",
+                 "def foo(a:ArrayList[String]);end")
+    assert_parse("[Script, [[MethodDefinition, [SimpleString, foo], [Arguments, [RequiredArgumentList, [RequiredArgument, [SimpleString, a], [TypeRefImpl, HashMap[[Constant, [SimpleString, String]], [Constant, [SimpleString, Integer]]]]]], [OptionalArgumentList], null, [RequiredArgumentList], null], null, [], [AnnotationList]]]]",
+                 "def foo(a:HashMap[String,Integer]);end")
+    assert_parse("[Script, [[MethodDefinition, [SimpleString, foo], [Arguments, [RequiredArgumentList, [RequiredArgument, [SimpleString, a], [TypeRefImpl, ArrayList[[TypeRefImpl, ArrayList[[Constant, [SimpleString, String]]]]]]]], [OptionalArgumentList], null, [RequiredArgumentList], null], null, [], [AnnotationList]]]]",
+                 "def foo(a:ArrayList[ArrayList[String]]);end;")
+    assert_parse("[Script, [[MethodDefinition, [SimpleString, foo], [Arguments, [RequiredArgumentList, [RequiredArgument, [SimpleString, a], [TypeRefImpl, String, array]]], [OptionalArgumentList], null, [RequiredArgumentList], null], null, [], [AnnotationList]]]]",
+                 "def foo(a:String[]);end")
+    assert_parse("[Script, [[MethodDefinition, [SimpleString, foo], [Arguments, [RequiredArgumentList, [RequiredArgument, [SimpleString, a], [TypeRefImpl, ArrayList[[Constant, [SimpleString, String]]], array]]], [OptionalArgumentList], null, [RequiredArgumentList], null], null, [], [AnnotationList]]]]",
+                 "def foo(a:ArrayList[String][]);end")
   end
 
   def test_method_call
@@ -549,6 +567,16 @@ EOF
     assert_parse("[Script, [[Super, [], null]]]", 'super()')
     assert_parse("[Script, [[ZSuper]]]", 'super')
     assert_parse("[Script, [[Call, [VCall, [SimpleString, a]], [SimpleString, foo], [], null]]]", "a\n.\nfoo")
+    assert_parse("[Script, [[Call, [Call, [Constant, [SimpleString, ArrayList]], [SimpleString, []], [[Constant, [SimpleString, String]]], null], [SimpleString, new], [], null]]]",
+                 'ArrayList[String].new')
+    assert_parse("[Script, [[Call, [Call, [Colon3, [SimpleString, ArrayList]], [SimpleString, []], [[Constant, [SimpleString, String]]], null], [SimpleString, new], [], null]]]",
+                 '::ArrayList[String].new')
+    assert_parse("[Script, [[Call, [Call, [Colon2, [VCall, [SimpleString, java]], [SimpleString, ArrayList]], [SimpleString, []], [[Constant, [SimpleString, String]]], null], [SimpleString, new], [], null]]]",
+                 'java::ArrayList[String].new')
+    assert_parse("[Script, [[Call, [Call, [Colon2, [Call, [VCall, [SimpleString, java]], [SimpleString, util], [], null], [SimpleString, ArrayList]], [SimpleString, []], [[Constant, [SimpleString, String]]], null], [SimpleString, new], [], null]]]",
+                 'java::util::ArrayList[String].new')
+    assert_parse("[Script, [[Call, [Call, [Colon2, [Call, [Call, [VCall, [SimpleString, java]], [SimpleString, util], [], null], [SimpleString, test], [], null], [SimpleString, ArrayList]], [SimpleString, []], [[Constant, [SimpleString, String]]], null], [SimpleString, new], [], null]]]",
+                 'java::util::test::ArrayList[String].new')
   end
 
   def test_command
